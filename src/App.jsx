@@ -282,6 +282,13 @@ export default function App() {
     }
   }, [activeTripId]);
 
+  // Auto-open reader modal when a day segment is selected
+  useEffect(() => {
+    if (activeDayId !== null) {
+      setIsStoryModalOpen(true);
+    }
+  }, [activeDayId]);
+
   const handleOpenViewer = (photos, index) => {
     setViewerPhotos(photos);
     setViewerIndex(index);
@@ -407,7 +414,7 @@ export default function App() {
         const res = await fetch('/api-gpx/wp-json/wp/v2/useky?per_page=100');
         if (!res.ok) throw new Error("Chyba při načítání dat z WordPress API");
         segmentsData = await res.json();
-        
+
         if (!segmentsData || segmentsData.length === 0) {
           throw new Error("Nebyly nalezeny žádné úseky");
         }
@@ -446,12 +453,12 @@ export default function App() {
           }
 
           // 1. Build fotogalerie array or filter out any empty entries
-          const hasValidFotogalerie = segment.acf.fotogalerie && 
-                                      Array.isArray(segment.acf.fotogalerie) && 
-                                      segment.acf.fotogalerie.some(f => f && (
-                                        (f.obrazek && typeof f.obrazek === 'string' && f.obrazek.trim() !== '') ||
-                                        (f.obrazek && typeof f.obrazek === 'object' && f.obrazek.url)
-                                      ));
+          const hasValidFotogalerie = segment.acf.fotogalerie &&
+            Array.isArray(segment.acf.fotogalerie) &&
+            segment.acf.fotogalerie.some(f => f && (
+              (f.obrazek && typeof f.obrazek === 'string' && f.obrazek.trim() !== '') ||
+              (f.obrazek && typeof f.obrazek === 'object' && f.obrazek.url)
+            ));
 
           if (hasValidFotogalerie) {
             segment.acf.fotogalerie = segment.acf.fotogalerie
@@ -463,7 +470,7 @@ export default function App() {
                 if (typeof f.obrazek === 'object') {
                   const img = f.obrazek;
                   const cap = f.popisek || f.caption || f.description || f.title ||
-                              img.popisek || img.caption || img.description || img.title || "";
+                    img.popisek || img.caption || img.description || img.title || "";
                   return {
                     obrazek: img.url,
                     popisek: extractString(cap)
@@ -512,17 +519,17 @@ export default function App() {
       for (const segment of segmentsData) {
         // Parent trips do not have GPX files, EXCEPT if they are uncompleted single-route trips
         const isParent = !segment.parent || segment.parent === 0;
-        
+
         // If a parent trip has at least one subsegment with GPX, we treat it as a grouped trip
-        const hasSubsegmentWithGpx = isParent && segmentsData.some(sub => 
-          Number(sub.parent) === Number(segment.id) && 
-          sub.acf?.gpx_soubor && 
+        const hasSubsegmentWithGpx = isParent && segmentsData.some(sub =>
+          Number(sub.parent) === Number(segment.id) &&
+          sub.acf?.gpx_soubor &&
           sub.acf.gpx_soubor.trim() !== ''
         );
 
-        const isSingleRouteTrip = isParent && 
-          segment.acf?.absolvovano === false && 
-          segment.acf?.gpx_soubor && 
+        const isSingleRouteTrip = isParent &&
+          segment.acf?.absolvovano === false &&
+          segment.acf?.gpx_soubor &&
           !hasSubsegmentWithGpx;
 
         if (isParent && !isSingleRouteTrip) {
@@ -595,14 +602,14 @@ export default function App() {
 
       // 2. Nest days into their parent trips
       const groupedTrips = mainTrips.map(trip => {
-        const hasSubsegmentWithGpx = segmentsData.some(sub => 
-          Number(sub.parent) === Number(trip.id) && 
-          sub.acf?.gpx_soubor && 
+        const hasSubsegmentWithGpx = segmentsData.some(sub =>
+          Number(sub.parent) === Number(trip.id) &&
+          sub.acf?.gpx_soubor &&
           sub.acf.gpx_soubor.trim() !== ''
         );
 
-        const isSingleRouteTrip = trip.acf?.absolvovano === false && 
-          trip.acf?.gpx_soubor && 
+        const isSingleRouteTrip = trip.acf?.absolvovano === false &&
+          trip.acf?.gpx_soubor &&
           !hasSubsegmentWithGpx;
 
         if (isSingleRouteTrip) {
@@ -613,7 +620,7 @@ export default function App() {
         }
 
         const tripDays = days.filter(d => d.parent === trip.id);
-        
+
         // Sort days numerically by title
         tripDays.sort((a, b) => {
           const tA = a.title?.rendered || '';
@@ -640,8 +647,8 @@ export default function App() {
 
         // Complete if all sub-days are complete
         trip.acf = trip.acf || {};
-        trip.acf.absolvovano = tripDays.length > 0 
-          ? tripDays.every(d => d.acf?.absolvovano === true) 
+        trip.acf.absolvovano = tripDays.length > 0
+          ? tripDays.every(d => d.acf?.absolvovano === true)
           : (trip.acf.absolvovano || false);
 
         return trip;
@@ -693,8 +700,8 @@ export default function App() {
   const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
 
   // Calculate dynamic bottom sheet height class for mobile viewports
-  const sidebarMobileHeightClass = activeDayId 
-    ? "h-[390px]" 
+  const sidebarMobileHeightClass = activeDayId
+    ? "h-[390px]"
     : (isMobileExpanded ? "h-[65vh]" : "h-[74px]");
 
   return (
@@ -744,7 +751,10 @@ export default function App() {
       {/* Reader Modal (Full screen overlay dialog) */}
       <Modal
         isOpen={isStoryModalOpen}
-        onClose={() => setIsStoryModalOpen(false)}
+        onClose={() => {
+          setIsStoryModalOpen(false);
+          setActiveDayId(null);
+        }}
         usek={activeDay}
         gpxStats={activeDayId ? gpxStatsMap[activeDayId] : null}
         resolveImageUrl={resolveImageUrl}

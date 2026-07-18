@@ -17,11 +17,9 @@ export default function Sidebar({
   onViewPhoto
 }) {
   const activeTrip = useky.find(u => u.id === activeTripId);
-  const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
-  const activeDayStats = activeDayId ? gpxStatsMap[activeDayId] : null;
   const activeTripStats = activeTripId ? gpxStatsMap[activeTripId] : null;
 
-  const currentDepth = activeDay ? 2 : (activeTrip ? 1 : 0);
+  const currentDepth = activeTrip ? 1 : 0;
   const [prevDepth, setPrevDepth] = useState(currentDepth);
   const [animationClass, setAnimationClass] = useState('');
 
@@ -85,128 +83,9 @@ export default function Sidebar({
         <div className="w-10 h-1 bg-stone-300 rounded-full" />
       </div>
 
-      {/* Conditionally render Detail View, Trip Overview, or General Overview */}
-      {activeDay ? (
-        /* 1. DAY DETAIL VIEW */
-        <div key="day-detail" className={`flex flex-col h-full ${animationClass}`}>
-
-          {/* Back Navigation Bar */}
-          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center">
-            <button
-              onClick={() => setActiveDayId(null)}
-              className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Zpět na {activeTrip?.title?.rendered || 'výlet'}
-            </button>
-          </div>
-
-          <div className="p-6 flex-1 overflow-y-auto space-y-6">
-
-            {/* Title & Status Badge */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {activeDay.acf?.absolvovano === true ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Absolvováno
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    Zatím neabsolvováno
-                  </span>
-                )}
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                {activeDay.title?.rendered || 'Bez názvu'}
-              </h2>
-            </div>
-
-
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
-                <MapPin className="w-4 h-4 text-sky-600 mb-1" />
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Vzdálenost</span>
-                <span className="text-sm font-bold text-slate-800 mt-0.5">
-                  {activeDayStats ? `${activeDayStats.distance} km` : '...'}
-                </span>
-              </div>
-              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
-                <ArrowUpRight className="w-4 h-4 text-emerald-600 mb-1" />
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Nastoupáno</span>
-                <span className="text-sm font-bold text-slate-800 mt-0.5">
-                  {activeDayStats ? `${activeDayStats.elevationGain} m` : '...'}
-                </span>
-              </div>
-              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
-                <ArrowDownRight className="w-4 h-4 text-rose-600 mb-1" />
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sklesáno</span>
-                <span className="text-sm font-bold text-slate-800 mt-0.5">
-                  {activeDayStats ? `${activeDayStats.elevationLoss} m` : '...'}
-                </span>
-              </div>
-            </div>
-
-            {activeDay.acf?.absolvovano === true ? (
-              <>
-                {/* Call to Action Button */}
-                <button
-                  onClick={onOpenStory}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 text-white font-semibold text-sm shadow-md hover:shadow-emerald-600/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Číst celý příběh z cesty
-                </button>
-
-
-
-                {/* Polaroid Photo Preview Card */}
-                {activeDay.acf?.fotogalerie?.length > 0 && (
-                  <div className="flex justify-center py-2 px-1">
-                    <div
-                      onClick={() => onViewPhoto(activeDay.acf.fotogalerie, 0)}
-                      className="polaroid-card w-full max-w-sm polaroid-rotate-left cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-md"
-                      title="Kliknutím otevřete fotogalerii"
-                    >
-                      <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 rounded-sm">
-                        <img
-                          src={resolveImageUrl(activeDay.acf.fotogalerie[0].obrazek, 0)}
-                          alt={activeDay.title?.rendered}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      {activeDay.acf.fotogalerie[0].popisek && (
-                        <p className="polaroid-caption">
-                          {activeDay.acf.fotogalerie[0].popisek}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              </>
-            ) : (
-              <div className="p-5 rounded-2xl bg-white border border-stone-200 text-slate-700 text-sm leading-relaxed text-center shadow-sm flex flex-col items-center justify-center gap-3 py-8 my-4">
-                <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-xl">
-                  📍
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 mb-1">
-                    Etapa nás teprve čeká!
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Tento úsek trasy jsme zatím neprošli. Kompletní příběh z cesty a fotogalerii sem doplníme, jakmile ho úspěšně zdoláme!
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : activeTrip ? (
-        /* 2. TRIP OVERVIEW (Day list for specific trip) */
+      {/* Conditionally render Trip Overview or General Overview */}
+      {activeTrip ? (
+        /* 1. TRIP OVERVIEW (Day list for specific trip) */
         <div key={`trip-overview-${activeTripId}`} className={`flex flex-col h-full ${animationClass}`}>
 
           {/* Back Navigation Bar */}
