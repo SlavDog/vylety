@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import Modal from './components/Modal';
 import ImageViewer from './components/ImageViewer';
 import gpxParser from 'gpxparser';
-import { Compass, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Compass, AlertTriangle, RefreshCw, ChevronUp, ChevronDown, X } from 'lucide-react';
 
 // Hardcoded mock data of "Stezka Českem" as fallback when WordPress API is down or CORS blocked.
 // It matches the exact WordPress REST API JSON structure.
@@ -274,6 +274,7 @@ export default function App() {
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
   const [viewerPhotos, setViewerPhotos] = useState([]);
   const [viewerIndex, setViewerIndex] = useState(null);
+  const [showMapHint, setShowMapHint] = useState(true);
 
   // Expand sidebar on mobile when a trip is selected (e.g. from a map click)
   useEffect(() => {
@@ -699,10 +700,17 @@ export default function App() {
   const activeTrip = useky.find(u => u.id === activeTripId);
   const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
 
-  // Calculate dynamic bottom sheet height class for mobile viewports
-  const sidebarMobileHeightClass = activeDayId
-    ? "h-[390px]"
-    : (isMobileExpanded ? "h-[65vh]" : "h-[74px]");
+  // Calculate dynamic bottom sheet classes for mobile viewports (height, border, shadow)
+  const sidebarMobileStyleClass = activeDayId
+    ? "h-[390px] border-t border-stone-200 shadow-2xl"
+    : (isMobileExpanded
+      ? "h-[65vh] border-t border-stone-200 shadow-2xl"
+      : "h-0 border-t-0 border-transparent shadow-none"
+    );
+
+  const mobileToggleBottomClass = activeDayId
+    ? "bottom-[406px]"
+    : (isMobileExpanded ? "bottom-[calc(65vh+16px)]" : "bottom-4");
 
   return (
     <div className="h-screen w-screen relative flex flex-col md:flex-row overflow-hidden bg-[#e6dfcd] text-slate-850">
@@ -727,10 +735,40 @@ export default function App() {
             Offline data
           </div>
         )}
+
+        {/* Floating Help Hint (visible when no trip is selected) */}
+        {activeTripId === null && showMapHint && (
+          <div className="absolute bottom-20 md:bottom-4 left-4 right-16 md:right-auto md:w-72 z-[999] p-3.5 rounded-xl bg-[#faf6ec]/95 backdrop-blur-sm border border-stone-400 flex gap-2.5 items-start shadow-md pointer-events-auto select-none">
+            <Compass className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+            <div className="flex-1 pr-3">
+              <p className="text-[11px] text-slate-800 leading-snug">
+                Klikněte na libovolnou <strong>trasu na mapě</strong> nebo <strong>rozbalte panel</strong> vpravo dole a vyberte si výlet, abyste si mohli přečíst deník a zobrazit fotky z konkrétní cesty.
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMapHint(false);
+              }}
+              className="absolute top-2 right-2 text-stone-400 hover:text-stone-600 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Mobile Toggle Button (only visible on mobile, moves with sidebar Y position) */}
+      <button
+        onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+        className={`fixed right-4 z-[1001] md:hidden flex items-center justify-center w-12 h-12 rounded-full bg-teal-700 hover:bg-teal-800 text-[#faf6ec] shadow-2xl border border-teal-900 active:scale-95 transition-all duration-300 cursor-pointer ${mobileToggleBottomClass}`}
+        title={isMobileExpanded ? 'Sbalit panel' : 'Rozbalit panel'}
+      >
+        {isMobileExpanded ? <ChevronDown className="w-6 h-6" /> : <ChevronUp className="w-6 h-6" />}
+      </button>
+
       {/* Sidebar / Floating Bottom Sheet (1/3 width on desktop) */}
-      <div className={`absolute bottom-0 left-0 right-0 z-[1000] md:relative md:h-full md:w-1/3 flex flex-col bg-[#f5eedc] border-t md:border-t-0 md:border-l border-stone-200 shadow-2xl transition-all duration-300 rounded-t-2xl md:rounded-t-none overflow-hidden order-2 md:order-2 ${sidebarMobileHeightClass}`}>
+      <div className={`absolute bottom-0 left-0 right-0 z-[1000] md:relative md:h-full md:w-1/3 flex flex-col bg-[#f5eedc] md:border-t-0 md:border-l border-stone-200 transition-all duration-300 rounded-t-2xl md:rounded-t-none overflow-hidden order-2 md:order-2 ${sidebarMobileStyleClass}`}>
         <Sidebar
           useky={useky}
           activeTripId={activeTripId}
