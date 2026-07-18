@@ -350,8 +350,8 @@ export default function App() {
     }
 
     try {
-      // If gpxUrl is not a valid URL string starting with http, use mockPath immediately
-      if (!gpxUrl.startsWith('http')) {
+      // If gpxUrl is not a valid URL string starting with http or /api-gpx, use mockPath immediately
+      if (!gpxUrl.startsWith('http') && !gpxUrl.startsWith('/api-gpx')) {
         const fallbackRes = await fetch(mockPath);
         if (!fallbackRes.ok) throw new Error("Nelze načíst záložní GPX soubor");
         const text = await fallbackRes.text();
@@ -360,8 +360,10 @@ export default function App() {
 
       let response;
       try {
-        // Use Vite local proxy for mudr-alena-hamplova.cz to avoid CORS
-        const targetUrl = gpxUrl.replace(/^https?:\/\/[^/]+/, '/api-gpx');
+        // If gpxUrl starts with http, replace the domain with the proxy prefix, otherwise use directly
+        const targetUrl = gpxUrl.startsWith('http')
+          ? gpxUrl.replace(/^https?:\/\/[^/]+/, '/api-gpx')
+          : gpxUrl;
         response = await fetch(targetUrl);
       } catch (e) {
         console.warn(`Přímé stahování z URL ${gpxUrl} selhalo, zkouším záložní cestu:`, e);
@@ -531,7 +533,8 @@ export default function App() {
 
         const slug = segment.slug || getSlugFromTitle(segment.title?.rendered || '');
         const mockGpxPath = `/gpx/${slug}.gpx`;
-        const gpxUrl = segment.acf?.gpx_soubor || '';
+        const rawGpxUrl = segment.acf?.gpx_soubor || '';
+        const gpxUrl = rawGpxUrl ? rawGpxUrl.replace('https://mudr-alena-hamplova.cz', '/api-gpx') : '';
 
         const parsedGpx = await loadGpxData(gpxUrl, mockGpxPath);
 
