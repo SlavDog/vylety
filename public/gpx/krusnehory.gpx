@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Antigravity Mock GPX Generator" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Krušné hory</name>
+    <trkseg>
+      <trkpt lat="50.312" lon="12.511"><ele>600</ele></trkpt>
+      <trkpt lat="50.360" lon="12.650"><ele>850</ele></trkpt>
+      <trkpt lat="50.395" lon="12.967"><ele>1244</ele></trkpt>
+      <trkpt lat="50.410" lon="12.925"><ele>1028</ele></trkpt>
+      <trkpt lat="50.515" lon="13.250"><ele>820</ele></trkpt>
+      <trkpt lat="50.620" lon="13.620"><ele>750</ele></trkpt>
+      <trkpt lat="50.720" lon="13.850"><ele>700</ele></trkpt>
+      <trkpt lat="50.780" lon="14.200"><ele>130</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Antigravity Mock GPX Generator" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Šumava</name>
+    <trkseg>
+      <trkpt lat="49.137" lon="13.232"><ele>750</ele></trkpt>
+      <trkpt lat="49.028" lon="13.483"><ele>980</ele></trkpt>
+      <trkpt lat="48.975" lon="13.560"><ele>1050</ele></trkpt>
+      <trkpt lat="48.870" lon="13.720"><ele>800</ele></trkpt>
+      <trkpt lat="48.778" lon="13.865"><ele>1090</ele></trkpt>
+      <trkpt lat="48.630" lon="14.230"><ele>730</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

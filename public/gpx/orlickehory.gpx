@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Antigravity Mock GPX Generator" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Orlické hory</name>
+    <trkseg>
+      <trkpt lat="50.360" lon="16.310"><ele>610</ele></trkpt>
+      <trkpt lat="50.320" lon="16.381"><ele>1019</ele></trkpt>
+      <trkpt lat="50.301" lon="16.438"><ele>1115</ele></trkpt>
+      <trkpt lat="50.210" lon="16.550"><ele>750</ele></trkpt>
+      <trkpt lat="50.140" lon="16.680"><ele>850</ele></trkpt>
+      <trkpt lat="50.083" lon="16.783"><ele>560</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

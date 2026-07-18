@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Antigravity Mock GPX Generator" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>České Švýcarsko</name>
+    <trkseg>
+      <trkpt lat="50.780" lon="14.200"><ele>130</ele></trkpt>
+      <trkpt lat="50.850" lon="14.240"><ele>320</ele></trkpt>
+      <trkpt lat="50.884" lon="14.281"><ele>400</ele></trkpt>
+      <trkpt lat="50.852" lon="14.394"><ele>428</ele></trkpt>
+      <trkpt lat="50.850" lon="14.550"><ele>550</ele></trkpt>
+      <trkpt lat="50.840" lon="14.650"><ele>790</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -1,0 +1,32 @@
+# Systémové soubory a cache
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.cache
+.parcel-cache
+
+# Logy chyb a npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Lokální konfigurace a tajné klíče (Environment variables)
+.env
+.env.local
+.env.*.local
+
+# IDE / Editory kódu
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cloudflare Pages a lokální wrangler cache (pokud bys ji používal)
+.wrangler/

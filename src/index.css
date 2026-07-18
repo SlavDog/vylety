@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #e6dfcd;
+  /* Soft granite-sage outdoor gray */
+  color: #1e293b;
+  /* Dark slate text for readability */
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars for a premium journal feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  /* Soft gray scroll track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Polaroid Card styling */
+.polaroid-card {
+  background: #ffffff;
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  position: relative;
+}
+
+.polaroid-rotate-left {
+  transform: rotate(-1.5deg);
+}
+
+.polaroid-rotate-right {
+  transform: rotate(1.8deg);
+}
+
+.polaroid-card:hover {
+  transform: rotate(0deg) scale(1.03);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+}
+
+.polaroid-caption {
+  font-family: 'Caveat', cursive;
+  font-size: 1.35rem;
+  color: #1e293b;
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 768px) {
+  .leaflet-popup .polaroid-card {
+    padding: 5px !important;
+    /* Tight white borders on mobile map popup */
+  }
+
+  .leaflet-popup .polaroid-caption {
+    font-size: 0.9rem !important;
+    margin-top: 5px !important;
+    line-height: 1.05 !important;
+  }
+}
+
+/* Leaflet Map customization */
+.leaflet-container {
+  font-family: 'Outfit', sans-serif;
+  background: #e6dfcd !important;
+}
+
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.leaflet-bar a {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  transition: all 0.2s ease;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f8fafc !important;
+  color: #0f766e !important;
+  /* Forest green hover */
+}
+
+/* Custom popup for leaflet */
+.leaflet-popup,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content {
+  height: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: none !important;
+}
+
+.leaflet-popup-content p {
+  margin: 10px 0px !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.leaflet-popup-tip {
+  display: none !important;
+  /* Hide standard arrow for clean Polaroid overlay */
+}
+
+
+/* Raw HTML Content typography styling inside Modal */
+.raw-html-content {
+  color: #334155;
+  font-size: 1.1rem;
+}
+
+.raw-html-content p {
+  margin-bottom: 1.25rem;
+  line-height: 1.75;
+}
+
+.raw-html-content h2,
+.raw-html-content h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.raw-html-content strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.raw-html-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.raw-html-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.raw-html-content li {
+  margin-bottom: 0.5rem;
+}
+
+.raw-html-content br {
+  display: block;
+  content: "";
+  margin-top: 0.5rem;
+}
+
+/* Sidebar menu slide transition animations */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-right {
+  animation: slideInFromRight 1.0s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-left {
+  animation: slideInFromLeft 1.0s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

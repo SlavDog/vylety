@@ -1,0 +1,504 @@
+import { useState, useEffect } from 'react';
+import { MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, BookOpen, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
+
+export default function Sidebar({
+  useky,
+  activeTripId,
+  setActiveTripId,
+  activeDayId,
+  setActiveDayId,
+  gpxStatsMap,
+  onOpenStory,
+  resolveImageUrl,
+  isMobileExpanded,
+  setIsMobileExpanded,
+  setHoveredTripId,
+  setHoveredDayId,
+  onViewPhoto
+}) {
+  const activeTrip = useky.find(u => u.id === activeTripId);
+  const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
+  const activeDayStats = activeDayId ? gpxStatsMap[activeDayId] : null;
+  const activeTripStats = activeTripId ? gpxStatsMap[activeTripId] : null;
+
+  const currentDepth = activeDay ? 2 : (activeTrip ? 1 : 0);
+  const [prevDepth, setPrevDepth] = useState(currentDepth);
+  const [animationClass, setAnimationClass] = useState('');
+
+  if (currentDepth !== prevDepth) {
+    if (currentDepth > prevDepth) {
+      setAnimationClass('animate-slide-right');
+    } else if (currentDepth < prevDepth) {
+      setAnimationClass('animate-slide-left');
+    }
+    setPrevDepth(currentDepth);
+  }
+
+  // Calculate global summary stats
+  let totalDistance = 0;
+  let completedDistance = 0;
+  let totalElevationGain = 0;
+  let completedElevationGain = 0;
+  let totalDaysCount = 0;
+  let completedDaysCount = 0;
+
+  useky.forEach(trip => {
+    const days = trip.sub_segments || [];
+    if (days.length > 0) {
+      totalDaysCount += days.length;
+      completedDaysCount += days.filter(d => d.acf?.absolvovano === true).length;
+      days.forEach(d => {
+        const stats = gpxStatsMap[d.id];
+        if (stats) {
+          totalDistance += stats.distance || 0;
+          totalElevationGain += stats.elevationGain || 0;
+          if (d.acf?.absolvovano === true) {
+            completedDistance += stats.distance || 0;
+            completedElevationGain += stats.elevationGain || 0;
+          }
+        }
+      });
+    } else {
+      // Single-route trip
+      const stats = gpxStatsMap[trip.id];
+      if (stats && stats.distance > 0) {
+        totalDaysCount += 1;
+        const isCompleted = trip.acf?.absolvovano === true;
+        if (isCompleted) {
+          completedDaysCount += 1;
+          completedDistance += stats.distance || 0;
+          completedElevationGain += stats.elevationGain || 0;
+        }
+        totalDistance += stats.distance || 0;
+        totalElevationGain += stats.elevationGain || 0;
+      }
+    }
+  });
+
+  return (
+    <div className="flex flex-col h-full bg-[#f5eedc] text-slate-800 select-none">
+      {/* Mobile Drag Handle */}
+      <div
+        className="flex md:hidden items-center justify-center pt-2 pb-1.5 cursor-pointer bg-[#f5eedc]"
+        onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+      >
+        <div className="w-10 h-1 bg-stone-300 rounded-full" />
+      </div>
+
+      {/* Conditionally render Detail View, Trip Overview, or General Overview */}
+      {activeDay ? (
+        /* 1. DAY DETAIL VIEW */
+        <div key="day-detail" className={`flex flex-col h-full ${animationClass}`}>
+
+          {/* Back Navigation Bar */}
+          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center">
+            <button
+              onClick={() => setActiveDayId(null)}
+              className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Zpět na {activeTrip?.title?.rendered || 'výlet'}
+            </button>
+          </div>
+
+          <div className="p-6 flex-1 overflow-y-auto space-y-6">
+
+            {/* Title & Status Badge */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {activeDay.acf?.absolvovano === true ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Absolvováno
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Zatím neabsolvováno
+                  </span>
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                {activeDay.title?.rendered || 'Bez názvu'}
+              </h2>
+            </div>
+
+
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <MapPin className="w-4 h-4 text-sky-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Vzdálenost</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeDayStats ? `${activeDayStats.distance} km` : '...'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <ArrowUpRight className="w-4 h-4 text-emerald-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Nastoupáno</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeDayStats ? `${activeDayStats.elevationGain} m` : '...'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <ArrowDownRight className="w-4 h-4 text-rose-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sklesáno</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeDayStats ? `${activeDayStats.elevationLoss} m` : '...'}
+                </span>
+              </div>
+            </div>
+
+            {activeDay.acf?.absolvovano === true ? (
+              <>
+                {/* Call to Action Button */}
+                <button
+                  onClick={onOpenStory}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 text-white font-semibold text-sm shadow-md hover:shadow-emerald-600/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Číst celý příběh z cesty
+                </button>
+
+
+
+                {/* Polaroid Photo Preview Card */}
+                {activeDay.acf?.fotogalerie?.length > 0 && (
+                  <div className="flex justify-center py-2 px-1">
+                    <div
+                      onClick={() => onViewPhoto(activeDay.acf.fotogalerie, 0)}
+                      className="polaroid-card w-full max-w-sm polaroid-rotate-left cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-md"
+                      title="Kliknutím otevřete fotogalerii"
+                    >
+                      <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 rounded-sm">
+                        <img
+                          src={resolveImageUrl(activeDay.acf.fotogalerie[0].obrazek, 0)}
+                          alt={activeDay.title?.rendered}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {activeDay.acf.fotogalerie[0].popisek && (
+                        <p className="polaroid-caption">
+                          {activeDay.acf.fotogalerie[0].popisek}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              </>
+            ) : (
+              <div className="p-5 rounded-2xl bg-white border border-stone-200 text-slate-700 text-sm leading-relaxed text-center shadow-sm flex flex-col items-center justify-center gap-3 py-8 my-4">
+                <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-xl">
+                  📍
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 mb-1">
+                    Etapa nás teprve čeká!
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Tento úsek trasy jsme zatím neprošli. Kompletní příběh z cesty a fotogalerii sem doplníme, jakmile ho úspěšně zdoláme!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : activeTrip ? (
+        /* 2. TRIP OVERVIEW (Day list for specific trip) */
+        <div key={`trip-overview-${activeTripId}`} className={`flex flex-col h-full ${animationClass}`}>
+
+          {/* Back Navigation Bar */}
+          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center">
+            <button
+              onClick={() => setActiveTripId(null)}
+              className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Zpět na přehled
+            </button>
+          </div>
+
+          <div className="p-6 flex-1 overflow-y-auto space-y-6">
+
+            {/* Trip Title & Completed Badge */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {activeTrip.acf?.absolvovano === true ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Absolvováno
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Částečně absolvováno
+                  </span>
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                {activeTrip.title?.rendered || 'Bez názvu'}
+              </h2>
+            </div>
+
+            {/* Trip Statistics Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <MapPin className="w-4 h-4 text-sky-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Celkem</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeTripStats ? `${activeTripStats.distance} km` : '...'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <ArrowUpRight className="w-4 h-4 text-emerald-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Nastoupáno</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeTripStats ? `${activeTripStats.elevationGain} m` : '...'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#faf6ec] border border-stone-400 rounded-xl flex flex-col justify-center items-center text-center">
+                <ArrowDownRight className="w-4 h-4 text-rose-600 mb-1" />
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sklesáno</span>
+                <span className="text-sm font-bold text-slate-800 mt-0.5">
+                  {activeTripStats ? `${activeTripStats.elevationLoss} m` : '...'}
+                </span>
+              </div>
+            </div>
+
+            {/* Trip Days List */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">
+                Jednotlivé dny výletu ({activeTrip.sub_segments?.length || 0})
+              </h3>
+
+              <div className="space-y-2">
+                {activeTrip.sub_segments?.length === 0 ? (
+                  <div className="p-5 rounded-2xl bg-white border border-stone-200/80 text-slate-500 text-sm text-center py-8 shadow-sm">
+                    Tento výlet zatím nemá žádné části.
+                  </div>
+                ) : (
+                  activeTrip.sub_segments?.map((day) => {
+                    const isCompleted = day.acf?.absolvovano === true;
+                    const stats = gpxStatsMap[day.id];
+
+                    const dayPhoto = day.acf?.fotogalerie && day.acf.fotogalerie.length > 0
+                      ? resolveImageUrl(day.acf.fotogalerie[0].obrazek, 0)
+                      : null;
+
+                    const itemStyle = dayPhoto ? {
+                      backgroundImage: `linear-gradient(to right, #faf6ec 40%, rgba(250, 246, 236, 0.8) 75%, rgba(250, 246, 236, 0.65) 100%), url(${dayPhoto})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    } : {};
+
+                    return (
+                      <div
+                        key={day.id}
+                        onClick={() => setActiveDayId(day.id)}
+                        onMouseEnter={() => setHoveredDayId(day.id)}
+                        onMouseLeave={() => setHoveredDayId(null)}
+                        style={itemStyle}
+                        className="p-3.5 rounded-xl bg-[#faf6ec] hover:bg-stone-50 border border-stone-400 hover:border-stone-500 transition-all duration-200 cursor-pointer flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isCompleted ? 'bg-emerald-600 ring-4 ring-emerald-500/10' : 'bg-stone-400 ring-4 ring-stone-200/30'}`} />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800 group-hover:text-teal-700 transition-colors">
+                              {day.title?.rendered}
+                            </p>
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              {isCompleted ? 'Absolvováno' : 'Zatím neabsolvováno'}
+                              {stats ? ` • ${stats.distance} km` : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      ) : (
+        /* 3. GENERAL OVERVIEW (Main Trips list) */
+        <div key="general-overview" className={`flex flex-col h-full ${animationClass}`}>
+          {/* Sidebar Header (Clickable on mobile to expand/collapse) */}
+          <div
+            onClick={() => { if (window.innerWidth < 768) setIsMobileExpanded(!isMobileExpanded); }}
+            className="px-6 py-4 md:p-6 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 cursor-pointer md:cursor-default select-none flex items-center justify-between gap-3"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <Compass className="w-4 h-4 text-teal-600 animate-spin-slow" />
+                <span className="text-[9px] tracking-wider uppercase font-bold text-teal-700">Cestovatelský Deník</span>
+              </div>
+              <h2 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tight">Stezka Českem</h2>
+              <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 hidden md:block">
+                Naše společné dobrodružství kolem českých hranic
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 flex-1 overflow-y-auto space-y-6">
+
+            {/* Global Stats Summary Dashboard */}
+            <div className="p-4 rounded-xl bg-[#faf6ec] border border-stone-400 space-y-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Dosavadní Pokrok</span>
+
+              <div className="flex justify-between items-baseline">
+                <span className="text-3xl font-extrabold text-slate-900">
+                  {completedDistance} <span className="text-sm font-semibold text-slate-500">/ {totalDistance} km</span>
+                </span>
+                <span className="text-xs text-emerald-700 font-semibold bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                  {completedDaysCount} dní
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-500"
+                  style={{ width: `${totalDistance ? (completedDistance / totalDistance) * 100 : 0}%` }}
+                />
+              </div>
+
+              {/* Tiny sub stats row */}
+              <div className="flex justify-between items-center text-xs text-slate-600 pt-1">
+                <span className="flex items-center gap-1 font-medium">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
+                  {completedElevationGain} m / {totalElevationGain} m celkem nastoupáno
+                </span>
+              </div>
+            </div>
+
+            {/* Book Promo Card */}
+            <div className="p-4 rounded-xl bg-[#faf6ec] border border-stone-400 flex items-start gap-4 select-none">
+              <img
+                src="/book_cover.png"
+                alt="Kniha Stezka Českem"
+                className="w-28 h-30 object-cover rounded border border-stone-300 shrink-0 shadow-sm"
+              />
+              <div className="flex-1 flex flex-col justify-between h-full min-h-[96px]">
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                    <span className="text-[9px] tracking-wider uppercase font-bold text-teal-700">Knižní Tip</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 leading-tight">
+                    Jsem autorkou knižní série Domácí lékař!
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Chcete vědět po čem sáhnout, když vás začne trápit kašel, chřipka, rýma, bolesti v krku či horečka? Případně co dělat, abyste tyto choroby vůbec nedostali? Pak bych vám ráda doporučila svou knižní sérii Domácí lékař. Více informací se dozvíte v odkazu níže.
+                  </p>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <a
+                    href="https://mudr-alena-hamplova.cz/jak-sam-bez-cizi-pomoci-zvladnout-bezne-nemoci/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-[10px] transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
+                  >
+                    <BookOpen className="w-3 h-3 shrink-0" />
+                    Domácí lékař I
+                  </a>
+                  <a
+                    href="https://mudr-alena-hamplova.cz/domaci-lekar-ii/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-[10px] transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
+                  >
+                    <BookOpen className="w-3 h-3 shrink-0" />
+                    Domácí lékař II
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* List of Trips */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">
+                Naše výlety ({useky.length})
+              </h3>
+
+              <div className="space-y-2">
+                {useky.map((trip) => {
+                  const isCompleted = trip.acf?.absolvovano === true;
+                  const stats = gpxStatsMap[trip.id];
+                  const days = trip.sub_segments || [];
+                  const completedDays = days.filter(d => d.acf?.absolvovano === true).length;
+                  const isSingleRouteTrip = trip.acf?.absolvovano === false && trip.acf?.gpx_soubor;
+
+                  let tripPhoto = null;
+                  const firstDay = days[0];
+                  if (firstDay?.acf?.fotogalerie && firstDay.acf.fotogalerie.length > 0) {
+                    tripPhoto = resolveImageUrl(firstDay.acf.fotogalerie[0].obrazek, 0);
+                  } else if (trip.acf?.fotogalerie && trip.acf.fotogalerie.length > 0) {
+                    tripPhoto = resolveImageUrl(trip.acf.fotogalerie[0].obrazek, 0);
+                  }
+
+                  const itemStyle = tripPhoto ? {
+                    backgroundImage: `linear-gradient(to right, #faf6ec 40%, rgba(250, 246, 236, 0.8) 75%, rgba(250, 246, 236, 0.65) 100%), url(${tripPhoto})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  } : {};
+
+                  return (
+                    <div
+                      key={trip.id}
+                      onClick={() => {
+                        if (!isSingleRouteTrip) {
+                          setActiveTripId(trip.id);
+                        }
+                      }}
+                      onMouseEnter={() => setHoveredTripId(trip.id)}
+                      onMouseLeave={() => setHoveredTripId(null)}
+                      style={itemStyle}
+                      className={`p-3.5 rounded-xl bg-[#faf6ec] border border-stone-400 transition-all duration-200 flex items-center justify-between group ${isSingleRouteTrip
+                        ? 'cursor-default select-none'
+                        : 'hover:bg-stone-50 hover:border-stone-500 cursor-pointer'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Bullet indicators based on status */}
+                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isCompleted ? 'bg-emerald-600 ring-4 ring-emerald-500/10' : 'bg-stone-400 ring-4 ring-stone-200/30'}`} />
+                        <div>
+                          <p className={`text-sm font-semibold text-slate-800 transition-colors ${!isSingleRouteTrip && 'group-hover:text-teal-700'}`}>
+                            {trip.title?.rendered}
+                          </p>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {isSingleRouteTrip ? (
+                              <>Zatím neabsolvováno{stats ? ` • ${stats.distance} km` : ''}</>
+                            ) : (
+                              <>{days.length} dní • {completedDays} / {days.length} absolvováno {stats ? ` • ${stats.distance} km` : ''}</>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!isSingleRouteTrip && (
+                          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
