@@ -26,11 +26,45 @@ export default function Sidebar({
   if (currentDepth !== prevDepth) {
     if (currentDepth > prevDepth) {
       setAnimationClass('animate-slide-right');
-    } else if (currentDepth < prevDepth) {
+    } else    if (currentDepth < prevDepth) {
       setAnimationClass('animate-slide-left');
     }
     setPrevDepth(currentDepth);
   }
+
+  // Mobile Swipe Gesture Event Handlers
+  const [touchStartY, setTouchStartY] = useState(null);
+
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY === null) return;
+    const currentY = e.touches[0].clientY;
+    const diffY = touchStartY - currentY; // Positive = swipe up, Negative = swipe down
+
+    // Swipe up threshold -> Expand bottom sheet
+    if (diffY > 40) {
+      setIsMobileExpanded(true);
+      setTouchStartY(null);
+    }
+    // Swipe down threshold -> Collapse bottom sheet
+    else if (diffY < -40) {
+      setIsMobileExpanded(false);
+      setTouchStartY(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartY(null);
+  };
+
+  const touchHandlers = {
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd
+  };
 
   // Calculate global summary stats
   let totalDistance = 0;
@@ -77,10 +111,11 @@ export default function Sidebar({
     <div className="flex flex-col h-full bg-[#f5eedc] text-slate-800 select-none">
       {/* Mobile Drag Handle */}
       <div
-        className="flex md:hidden items-center justify-center pt-2 pb-1.5 cursor-pointer bg-[#f5eedc]"
+        className="flex md:hidden items-center justify-center pt-3.5 pb-2.5 cursor-pointer bg-[#f5eedc] hover:bg-[#f3ead3] transition-colors duration-200 select-none border-b border-stone-200/40"
         onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+        {...touchHandlers}
       >
-        <div className="w-10 h-1 bg-stone-300 rounded-full" />
+        <div className="w-14 h-1.5 bg-stone-400 rounded-full shadow-inner" />
       </div>
 
       {/* Conditionally render Trip Overview or General Overview */}
@@ -89,7 +124,10 @@ export default function Sidebar({
         <div key={`trip-overview-${activeTripId}`} className={`flex flex-col h-full ${animationClass}`}>
 
           {/* Back Navigation Bar */}
-          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center">
+          <div 
+            className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center select-none"
+            {...touchHandlers}
+          >
             <button
               onClick={() => setActiveTripId(null)}
               className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors cursor-pointer"
@@ -214,6 +252,7 @@ export default function Sidebar({
           <div
             onClick={() => { if (window.innerWidth < 768) setIsMobileExpanded(!isMobileExpanded); }}
             className="px-6 py-4 md:p-6 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 cursor-pointer md:cursor-default select-none flex items-center justify-between gap-3"
+            {...touchHandlers}
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
