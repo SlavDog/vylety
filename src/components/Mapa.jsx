@@ -12,15 +12,15 @@ function MapController({ activeTrack, activeTripId, activeDayId }) {
   useEffect(() => {
     if (activeTrack && activeTrack.coordinates && activeTrack.coordinates.length > 0) {
       const bounds = L.latLngBounds(activeTrack.coordinates);
-      
+
       const isMobile = window.innerWidth < 768;
       let paddingBottom = 60;
       let paddingTop = 60;
-      
+
       if (isMobile) {
         if (activeDayId) {
           // Day detail sidebar height is 390px
-          paddingBottom = 410; 
+          paddingBottom = 410;
           paddingTop = 40;
         } else if (activeTripId) {
           // Trip day list sidebar height is 65vh
@@ -214,8 +214,8 @@ export default function Mapa({
         })}
 
         {/* Map positioning controller */}
-        <MapController 
-          activeTrack={activeTrack} 
+        <MapController
+          activeTrack={activeTrack}
           activeTripId={activeTripId}
           activeDayId={activeDayId}
         />
@@ -234,11 +234,11 @@ export default function Mapa({
       {isInfoOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           {/* Glassmorphic backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity duration-200"
             onClick={() => setIsInfoOpen(false)}
           />
-          
+
           {/* Info Dialog Box */}
           <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
             <button
@@ -247,29 +247,26 @@ export default function Mapa({
             >
               <X className="w-4 h-4" />
             </button>
-            
+
             <div className="flex items-center gap-3 pb-2 border-b border-stone-200">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-600/10 text-lg">
                 🌲
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900 leading-tight">Naše Stezka Českem</h2>
-                <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider">Marek & Lucka</span>
+                <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider">El & Ála</span>
               </div>
             </div>
-            
+
             <div className="text-sm text-slate-600 space-y-3 leading-relaxed">
               <p>
-                Vítejte v našem cestovatelském deníku! Tento projekt mapuje naši společnou cestu po <strong>Stezce Českem</strong> – první oficiální pěší trase vedoucí podél hranic České republiky.
+                Vítejte v našem cestovatelském deníku! Tato stránka mapuje naši společnou cestu po <strong>Stezce Českem</strong> – první oficiální pěší trase vedoucí podél hranic České republiky.
               </p>
               <p>
-                Kliknutím na jednotlivé <strong>úseky trasy na mapě</strong> si můžete zobrazit podrobné statistiky o vzdálenosti a převýšení (které parsujeme z GPX souborů), prohlédnout si polaroidové snímky z cesty a přečíst si naše zápisky a zážitky.
-              </p>
-              <p className="text-[11px] text-slate-500 italic pt-1 border-t border-stone-150">
-                Technické info: Data jsou dynamicky načítána z WordPress REST API přes vlastní post type <code>useky</code> s ACF poli pro GPX a fotogalerii.
+                Kliknutím na jednotlivé <strong>úseky trasy na mapě</strong> si můžete zobrazit informace o konkrétní trase a přečíst si zápisky z našich dobrodružství.
               </p>
             </div>
-            
+
             <button
               onClick={() => setIsInfoOpen(false)}
               className="w-full py-2.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-semibold text-sm transition-all duration-200 mt-2 cursor-pointer shadow-sm"
