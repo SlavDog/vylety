@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Info, X } from 'lucide-react';
+import { Info, X, BookOpen } from 'lucide-react';
 
 
 // Helper component to center and zoom map to segment coordinates
-// Helper component to center and zoom map to segment coordinates
-function MapController({ activeTrack, activeTripId, activeDayId }) {
+function MapController({ activeTrack, activeTripId, activeDayId, isMobileExpanded }) {
   const map = useMap();
 
   useEffect(() => {
@@ -23,12 +22,16 @@ function MapController({ activeTrack, activeTripId, activeDayId }) {
           paddingBottom = 410;
           paddingTop = 40;
         } else if (activeTripId) {
-          // Trip day list sidebar height is 65vh
-          paddingBottom = Math.round(window.innerHeight * 0.65) + 20;
+          // Trip day list sidebar height is 60vh
+          paddingBottom = Math.round(window.innerHeight * 0.60) + 20;
+          paddingTop = 40;
+        } else if (isMobileExpanded) {
+          // General overview sidebar height is 60vh when expanded by default
+          paddingBottom = Math.round(window.innerHeight * 0.60) + 20;
           paddingTop = 40;
         } else {
-          // General overview collapsed sidebar height is 74px
-          paddingBottom = 90;
+          // General overview collapsed sidebar height is 74px (or hidden h-0)
+          paddingBottom = 40;
           paddingTop = 40;
         }
       }
@@ -41,7 +44,7 @@ function MapController({ activeTrack, activeTripId, activeDayId }) {
         duration: 1.2
       });
     }
-  }, [activeTrack, activeTripId, activeDayId, map]);
+  }, [activeTrack, activeTripId, activeDayId, isMobileExpanded, map]);
 
   return null;
 }
@@ -55,17 +58,24 @@ export default function Mapa({
   hoveredTripId,
   setHoveredTripId,
   hoveredDayId,
-  setHoveredDayId
+  setHoveredDayId,
+  isMobileExpanded
 }) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isBookOpen, setIsBookOpen] = useState(false);
 
   // Center of Czech Republic
   const centerOfCR = [49.8175, 15.4730];
   const defaultZoom = 7.5;
 
+  // Memoize all tracks coordinates so reference doesn't change on hover states
+  const allTracks = useMemo(() => ({
+    coordinates: useky.flatMap(trip => trip.coordinates || [])
+  }), [useky]);
+
   const activeTrip = useky.find(u => u.id === activeTripId);
   const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
-  const activeTrack = activeDay || activeTrip;
+  const activeTrack = activeDay || activeTrip || allTracks;
 
   return (
     <div className="w-full h-full relative">
@@ -131,7 +141,7 @@ export default function Mapa({
               if (isDayCompleted) {
                 color = isTripHovered ? '#22c55e' : '#15803d'; // Vibrant green on hover, rich forest green normally
               } else {
-                color = isTripHovered ? '#a8a29e' : '#78716c'; // Lighter stone on hover, slate-stone normally
+                color = isTripHovered ? '#d97706' : '#78716c'; // Warm amber-orange on hover, slate-stone normally
               }
               weight = isTripHovered ? 6 : 4.5;
               opacity = 1.0;
@@ -148,7 +158,7 @@ export default function Mapa({
                 weight = 8.5;
                 dashArray = undefined; // Solid line for active highlight
               } else if (isDayHovered) {
-                weight = 7.5; // Keep base color, make line thicker
+                weight = 7.5; // Make line thicker, keeping its original color
               } else {
                 weight = 4.5; // Default thickness
               }
@@ -218,17 +228,31 @@ export default function Mapa({
           activeTrack={activeTrack}
           activeTripId={activeTripId}
           activeDayId={activeDayId}
+          isMobileExpanded={isMobileExpanded}
         />
       </MapContainer>
 
-      {/* Floating Project Info Button */}
-      <button
-        onClick={() => setIsInfoOpen(true)}
-        className="absolute top-4 left-4 z-[999] p-3 rounded-full bg-white/95 border border-stone-200/80 text-teal-700 hover:text-teal-600 hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center"
-        title="O projektu"
-      >
-        <Info className="w-5 h-5" />
-      </button>
+      {/* Floating Controls Top Left */}
+      <div className="absolute top-4 left-4 z-[999] flex gap-2 items-center">
+        {/* Floating Project Info Button */}
+        <button
+          onClick={() => setIsInfoOpen(true)}
+          className="p-3 rounded-full bg-white/95 border border-stone-200/80 text-teal-700 hover:text-teal-650 hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center"
+          title="O projektu"
+        >
+          <Info className="w-5 h-5" />
+        </button>
+
+        {/* Floating Book Promo Button */}
+        <button
+          onClick={() => setIsBookOpen(true)}
+          className="px-4 py-2.5 rounded-full bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center gap-1.5 border border-teal-900"
+          title="Kupte si mou knihu"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Kupte si mou knihu</span>
+        </button>
+      </div>
 
       {/* Custom Info Overlay Dialog */}
       {isInfoOpen && (
@@ -273,6 +297,74 @@ export default function Mapa({
             >
               Zavřít informace
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Book Promo Overlay Dialog */}
+      {isBookOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          {/* Glassmorphic backdrop */}
+          <div
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity duration-200"
+            onClick={() => setIsBookOpen(false)}
+          />
+
+          {/* Book Dialog Box */}
+          <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+            <button
+              onClick={() => setIsBookOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-stone-200/50 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 pb-2 border-b border-stone-200">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-600/10 text-lg">
+                📚
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 leading-tight">Knižní Tip</h2>
+                <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider">MUDr. Alena Hamplová</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 py-2">
+              <img
+                src="/book_cover.png"
+                alt="Kniha Domácí lékař"
+                className="w-36 h-36 object-cover rounded border border-stone-300 mx-auto sm:mx-0 shrink-0 shadow-md"
+              />
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-slate-900 leading-tight">
+                  Jsem autorkou knižní série Domácí lékař!
+                </h4>
+                <p className="text-[11px] text-slate-655 mt-2 leading-relaxed">
+                  Chcete vědět po čem sáhnout, když vás začne trápit kašel, chřipka, rýma, bolesti v krku či horečka? Případně co dělat, abyste tyto choroby vůbec nedostali? Pak bych vám ráda doporučila svou knižní sérii Domácí lékař.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <a
+                href="https://mudr-alena-hamplova.cz/jak-sam-bez-cizi-pomoci-zvladnout-bezne-nemoci/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-xs transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                Domácí lékař I
+              </a>
+              <a
+                href="https://mudr-alena-hamplova.cz/domaci-lekar-ii/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-xs transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                Domácí lékař II
+              </a>
+            </div>
           </div>
         </div>
       )}

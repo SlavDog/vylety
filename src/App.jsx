@@ -271,10 +271,9 @@ export default function App() {
   const [gpxStatsMap, setGpxStatsMap] = useState({});
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(true);
   const [viewerPhotos, setViewerPhotos] = useState([]);
   const [viewerIndex, setViewerIndex] = useState(null);
-  const [showMapHint, setShowMapHint] = useState(true);
 
   // Expand sidebar on mobile when a trip is selected (e.g. from a map click)
   useEffect(() => {
@@ -704,13 +703,13 @@ export default function App() {
   const sidebarMobileStyleClass = activeDayId
     ? "h-[390px] border-t border-stone-200 shadow-2xl"
     : (isMobileExpanded
-      ? "h-[65vh] border-t border-stone-200 shadow-2xl"
+      ? "h-[60vh] border-t border-stone-200 shadow-2xl"
       : "h-0 border-t-0 border-transparent shadow-none"
     );
 
   const mobileToggleBottomClass = activeDayId
     ? "bottom-[406px]"
-    : (isMobileExpanded ? "bottom-[calc(65vh+16px)]" : "bottom-4");
+    : (isMobileExpanded ? "bottom-[calc(60vh+16px)]" : "bottom-4");
 
   return (
     <div className="h-screen w-screen relative flex flex-col md:flex-row overflow-hidden bg-[#e6dfcd] text-slate-850">
@@ -727,33 +726,13 @@ export default function App() {
           setHoveredTripId={setHoveredTripId}
           hoveredDayId={hoveredDayId}
           setHoveredDayId={setHoveredDayId}
+          isMobileExpanded={isMobileExpanded}
         />
 
         {/* Floating Indicator when showing mock data */}
         {usingMockData && (
           <div className="absolute bottom-[88px] md:bottom-4 left-4 z-[999] px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80 text-[10px] font-bold tracking-wide backdrop-blur-sm pointer-events-none uppercase shadow-sm">
             Offline data
-          </div>
-        )}
-
-        {/* Floating Help Hint (visible when no trip is selected) */}
-        {activeTripId === null && showMapHint && (
-          <div className="absolute bottom-20 md:bottom-4 left-4 right-16 md:right-auto md:w-72 z-[999] p-3.5 rounded-xl bg-[#faf6ec]/95 backdrop-blur-sm border border-stone-400 flex gap-2.5 items-start shadow-md pointer-events-auto select-none">
-            <Compass className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-            <div className="flex-1 pr-3">
-              <p className="text-[11px] text-slate-800 leading-snug">
-                Klikněte na libovolnou <strong>trasu na mapě</strong> nebo <strong>rozbalte panel</strong> vpravo dole a vyberte si výlet, abyste si mohli přečíst deník a zobrazit fotky z konkrétní cesty.
-              </p>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMapHint(false);
-              }}
-              className="absolute top-2 right-2 text-stone-400 hover:text-stone-600 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
           </div>
         )}
       </div>

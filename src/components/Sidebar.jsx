@@ -259,48 +259,6 @@ export default function Sidebar({
               </div>
             </div>
 
-            {/* Book Promo Card */}
-            <div className="p-4 rounded-xl bg-[#faf6ec] border border-stone-400 flex items-start gap-4 select-none">
-              <img
-                src="/book_cover.png"
-                alt="Kniha Stezka Českem"
-                className="w-28 h-30 object-cover rounded border border-stone-300 shrink-0 shadow-sm"
-              />
-              <div className="flex-1 flex flex-col justify-between h-full min-h-[96px]">
-                <div>
-                  <div className="flex items-center gap-1 mb-1">
-                    <BookOpen className="w-3.5 h-3.5 text-teal-600" />
-                    <span className="text-[9px] tracking-wider uppercase font-bold text-teal-700">Knižní Tip</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900 leading-tight">
-                    Jsem autorkou knižní série Domácí lékař!
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                    Chcete vědět po čem sáhnout, když vás začne trápit kašel, chřipka, rýma, bolesti v krku či horečka? Případně co dělat, abyste tyto choroby vůbec nedostali? Pak bych vám ráda doporučila svou knižní sérii Domácí lékař. Více informací se dozvíte v odkazu níže.
-                  </p>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <a
-                    href="https://mudr-alena-hamplova.cz/jak-sam-bez-cizi-pomoci-zvladnout-bezne-nemoci/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-[10px] transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
-                  >
-                    <BookOpen className="w-3 h-3 shrink-0" />
-                    Domácí lékař I
-                  </a>
-                  <a
-                    href="https://mudr-alena-hamplova.cz/domaci-lekar-ii/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-[#faf6ec] font-bold text-[10px] transition-colors duration-200 cursor-pointer border border-teal-900 text-center"
-                  >
-                    <BookOpen className="w-3 h-3 shrink-0" />
-                    Domácí lékař II
-                  </a>
-                </div>
-              </div>
-            </div>
 
             {/* List of Trips */}
             <div className="space-y-3">
