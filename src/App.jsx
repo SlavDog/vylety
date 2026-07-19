@@ -274,6 +274,23 @@ export default function App() {
   const [isMobileExpanded, setIsMobileExpanded] = useState(true);
   const [viewerPhotos, setViewerPhotos] = useState([]);
   const [viewerIndex, setViewerIndex] = useState(null);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('stezka_welcome_shown');
+      return stored !== 'true';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleCloseWelcome = () => {
+    setIsWelcomeOpen(false);
+    try {
+      localStorage.setItem('stezka_welcome_shown', 'true');
+    } catch (e) {
+      console.warn('LocalStorage is not available:', e);
+    }
+  };
 
   // Expand sidebar on mobile when a trip is selected (e.g. from a map click)
   useEffect(() => {
@@ -727,6 +744,7 @@ export default function App() {
           hoveredDayId={hoveredDayId}
           setHoveredDayId={setHoveredDayId}
           isMobileExpanded={isMobileExpanded}
+          onOpenHelp={() => setIsWelcomeOpen(true)}
         />
 
         {/* Floating Indicator when showing mock data */}
@@ -788,6 +806,72 @@ export default function App() {
         onNext={handleNextPhoto}
         resolveImageUrl={resolveImageUrl}
       />
+
+      {/* Welcome / Onboarding Guide Modal */}
+      {isWelcomeOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          {/* Glassmorphic backdrop */}
+          <div
+            className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity duration-200"
+            onClick={handleCloseWelcome}
+          />
+
+          {/* Welcome Dialog Box */}
+          <div className="relative w-full max-w-lg p-8 bg-[#f5eedc] border border-stone-300 rounded-3xl shadow-2xl z-10 flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300 text-slate-800">
+            <button
+              onClick={handleCloseWelcome}
+              className="absolute top-5 right-5 p-2 rounded-full hover:bg-stone-200/50 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Icon Header */}
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-700/10 text-3xl animate-bounce-slow">
+                🧭
+              </div>
+              <div className="mt-2">
+                <span className="text-[10px] text-teal-700 font-extrabold uppercase tracking-widest">Nápověda k ovládání</span>
+                <h2 className="text-2xl font-extrabold text-slate-900 leading-tight mt-1">
+                  Jak si přečíst náš deník z cesty?
+                </h2>
+              </div>
+            </div>
+
+            {/* Instruction Body */}
+            <div className="text-sm text-slate-600 space-y-4 leading-relaxed bg-[#faf6ec] border border-stone-300 rounded-2xl p-5 shadow-inner">
+              <p className="text-center font-medium text-slate-800 text-base">
+                Pro otevření článku z konkrétní trasy:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="flex gap-2.5 items-start">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-100 text-teal-800 text-xs font-bold shrink-0 mt-0.5">1</span>
+                  <p className="text-xs">
+                    Klikněte na jakýkoliv <strong>úsek trasy přímo na mapě</strong>.
+                  </p>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-100 text-teal-800 text-xs font-bold shrink-0 mt-0.5">2</span>
+                  <p className="text-xs">
+                    Nebo vyberte výlet ze <strong>seznamu v postranním panelu</strong>.
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 text-center pt-2 italic">
+                Následně se vám zobrazí seznam jednotlivých dnů, kde po rozkliknutí najdete zápisky z cest a fotogalerii.
+              </p>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={handleCloseWelcome}
+              className="w-full py-3.5 rounded-2xl bg-teal-700 hover:bg-teal-600 active:scale-98 text-white font-bold text-sm transition-all duration-200 cursor-pointer shadow-md shadow-teal-700/10 hover:shadow-lg text-center"
+            >
+              Rozumím a chci začít
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

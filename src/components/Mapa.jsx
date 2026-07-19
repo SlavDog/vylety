@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Info, X, BookOpen } from 'lucide-react';
+import { Info, X, BookOpen, HelpCircle } from 'lucide-react';
 
 
 // Helper component to center and zoom map to segment coordinates
@@ -59,7 +59,8 @@ export default function Mapa({
   setHoveredTripId,
   hoveredDayId,
   setHoveredDayId,
-  isMobileExpanded
+  isMobileExpanded,
+  onOpenHelp
 }) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isBookOpen, setIsBookOpen] = useState(false);
@@ -241,6 +242,15 @@ export default function Mapa({
           title="O projektu"
         >
           <Info className="w-5 h-5" />
+        </button>
+
+        {/* Floating Help Guide Button */}
+        <button
+          onClick={onOpenHelp}
+          className="p-3 rounded-full bg-white/95 border border-stone-200/80 text-teal-700 hover:text-teal-650 hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center"
+          title="Nápověda k ovládání"
+        >
+          <HelpCircle className="w-5 h-5" />
         </button>
 
         {/* Floating Book Promo Button */}
