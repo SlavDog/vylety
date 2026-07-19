@@ -107,6 +107,11 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
                       Zatím neabsolvováno
                     </span>
                   )}
+                  {usek.acf?.formattedDatum && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#faf6ec] text-stone-700 border border-stone-400">
+                      📅 {usek.acf.formattedDatum}
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
                   {title}
@@ -164,7 +169,7 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
                             />
                           </div>
                           {foto.popisek && (
-                            <p className="polaroid-caption !text-[11px] !mt-1.5 leading-tight truncate">
+                            <p className="polaroid-caption !text-lg md:!text-xl !mt-1.5 leading-tight truncate">
                               {foto.popisek}
                             </p>
                           )}
@@ -218,7 +223,7 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
                             />
                           </div>
                           {foto.popisek && (
-                            <p className="polaroid-caption !text-[10px] !mt-1.5 leading-tight truncate">
+                            <p className="polaroid-caption !text-lg md:!text-xl !mt-1.5 leading-tight truncate">
                               {foto.popisek}
                             </p>
                           )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, BookOpen, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Sidebar({
   useky,
@@ -73,6 +73,50 @@ export default function Sidebar({
     }
   });
 
+  const [animatedDistance, setAnimatedDistance] = useState(0);
+  const [animatedDays, setAnimatedDays] = useState(0);
+  const [animatedElevation, setAnimatedElevation] = useState(0);
+
+  const [shouldStart, setShouldStart] = useState(false);
+
+  useEffect(() => {
+    if (completedDistance === 0) return;
+
+    // Delay animation start by 800ms to let Leaflet map and tile loading complete smoothly
+    const delayId = setTimeout(() => {
+      setShouldStart(true);
+    }, 800);
+
+    return () => clearTimeout(delayId);
+  }, [completedDistance]);
+
+  useEffect(() => {
+    if (!shouldStart || completedDistance === 0) return;
+
+    let start = null;
+    const duration = 1200; // 1.2s smooth animation
+
+    const animate = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = timestamp - start;
+      const percentage = Math.min(progress / duration, 1);
+
+      // easeOutQuad
+      const ease = percentage * (2 - percentage);
+
+      setAnimatedDistance(Math.round(ease * completedDistance));
+      setAnimatedDays(Math.round(ease * completedDaysCount));
+      setAnimatedElevation(Math.round(ease * completedElevationGain));
+
+      if (percentage < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    const animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, [shouldStart, completedDistance, completedDaysCount, completedElevationGain]);
+
   return (
     <div className="flex flex-col h-full bg-[#f5eedc] text-slate-800 select-none">
       {/* Mobile Drag Handle */}
@@ -113,6 +157,11 @@ export default function Sidebar({
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
                     <AlertCircle className="w-3.5 h-3.5" />
                     Částečně absolvováno
+                  </span>
+                )}
+                {activeTrip.formattedDatum && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#faf6ec] text-stone-700 border border-stone-400">
+                    📅 {activeTrip.formattedDatum}
                   </span>
                 )}
               </div>
@@ -191,6 +240,7 @@ export default function Sidebar({
                             <span className="text-[11px] text-slate-500 font-medium">
                               {isCompleted ? 'Absolvováno' : 'Zatím neabsolvováno'}
                               {stats ? ` • ${stats.distance} km` : ''}
+                              {day.acf?.formattedDatum ? ` • ${day.acf.formattedDatum}` : ''}
                             </span>
                           </div>
                         </div>
@@ -235,18 +285,18 @@ export default function Sidebar({
 
               <div className="flex justify-between items-baseline">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  {completedDistance} <span className="text-sm font-semibold text-slate-500">/ {totalDistance} km</span>
+                  {animatedDistance} <span className="text-sm font-semibold text-slate-500">/ {totalDistance} km</span>
                 </span>
                 <span className="text-xs text-emerald-700 font-semibold bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                  {completedDaysCount} dní
+                  {animatedDays} dní
                 </span>
               </div>
 
               {/* Progress Bar */}
               <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-500"
-                  style={{ width: `${totalDistance ? (completedDistance / totalDistance) * 100 : 0}%` }}
+                  className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full"
+                  style={{ width: `${totalDistance ? (animatedDistance / totalDistance) * 100 : 0}%` }}
                 />
               </div>
 
@@ -254,7 +304,7 @@ export default function Sidebar({
               <div className="flex justify-between items-center text-xs text-slate-600 pt-1">
                 <span className="flex items-center gap-1 font-medium">
                   <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
-                  {completedElevationGain} m / {totalElevationGain} m celkem nastoupáno
+                  {animatedElevation} m / {totalElevationGain} m celkem nastoupáno
                 </span>
               </div>
             </div>
@@ -318,6 +368,7 @@ export default function Sidebar({
                             ) : (
                               <>{days.length} dní • {completedDays} / {days.length} absolvováno {stats ? ` • ${stats.distance} km` : ''}</>
                             )}
+                            {trip.formattedDatum && ` • ${trip.formattedDatum}`}
                           </span>
                         </div>
                       </div>

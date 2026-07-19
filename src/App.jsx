@@ -260,6 +260,121 @@ function resolveImageUrl(url, index = 0) {
   return url;
 }
 
+// Helper to parse date string Y-m-d or Ymd to native Date object
+function parseDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const cleanStr = dateStr.trim();
+  if (cleanStr === '') return null;
+
+  let year, month, day;
+
+  if (cleanStr.includes('-')) {
+    // Format Y-m-d (e.g. "2026-07-19")
+    const parts = cleanStr.split('-');
+    if (parts.length !== 3) return null;
+    year = parseInt(parts[0], 10);
+    month = parseInt(parts[1], 10) - 1;
+    day = parseInt(parts[2], 10);
+  } else if (cleanStr.length === 8 && /^\d{8}$/.test(cleanStr)) {
+    // Format Ymd (e.g. "20260607")
+    year = parseInt(cleanStr.substring(0, 4), 10);
+    month = parseInt(cleanStr.substring(4, 6), 10) - 1;
+    day = parseInt(cleanStr.substring(6, 8), 10);
+  } else {
+    return null;
+  }
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+  return new Date(year, month, day);
+}
+
+// Helper to format date string to cs-CZ locale
+function formatDate(dateStr) {
+  const dateObj = parseDate(dateStr);
+  if (!dateObj) return '';
+  return dateObj.toLocaleDateString('cs-CZ');
+}
+
+// Helper to construct date range string from subsegments of a trip
+function formatTripDates(tripDays) {
+  if (!tripDays || tripDays.length === 0) return '';
+  
+  const dates = tripDays
+    .map(d => d.acf?.datum)
+    .filter(d => typeof d === 'string' && d.trim() !== '')
+    .sort();
+
+  if (dates.length === 0) return '';
+
+  const parsedDates = [];
+  const uniqueStrDates = new Set();
+  
+  dates.forEach(d => {
+    if (uniqueStrDates.has(d)) return;
+    uniqueStrDates.add(d);
+    
+    const dateObj = parseDate(d);
+    if (dateObj) {
+      parsedDates.push({
+        str: d,
+        date: dateObj
+      });
+    }
+  });
+
+  parsedDates.sort((a, b) => a.date - b.date);
+
+  if (parsedDates.length === 0) return '';
+
+  const groups = [];
+  let currentGroup = [];
+
+  parsedDates.forEach((pDate, idx) => {
+    if (idx === 0) {
+      currentGroup.push(pDate);
+    } else {
+      const prevDate = parsedDates[idx - 1].date;
+      const diffTime = pDate.date.getTime() - prevDate.getTime();
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+      
+      if (diffTime > oneWeekInMs) {
+        groups.push(currentGroup);
+        currentGroup = [pDate];
+      } else {
+        currentGroup.push(pDate);
+      }
+    }
+  });
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  const groupStrings = groups.map(group => {
+    if (group.length === 1) {
+      return formatDate(group[0].str);
+    } else {
+      const first = group[0].date;
+      const last = group[group.length - 1].date;
+      
+      const dayA = first.getDate();
+      const monthA = first.getMonth() + 1;
+      const yearA = first.getFullYear();
+      
+      const dayB = last.getDate();
+      const monthB = last.getMonth() + 1;
+      const yearB = last.getFullYear();
+
+      if (yearA === yearB) {
+        return `${dayA}. ${monthA}. – ${dayB}. ${monthB}. ${yearB}`;
+      } else {
+        return `${dayA}. ${monthA}. ${yearA} – ${dayB}. ${monthB}. ${yearB}`;
+      }
+    }
+  });
+
+  return groupStrings.join(', ');
+}
+
 export default function App() {
   const [useky, setUseky] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -427,8 +542,8 @@ export default function App() {
       let segmentsData = [];
 
       try {
-        // Request 100 items per page to prevent truncation
-        const res = await fetch('/api-gpx/wp-json/wp/v2/useky?per_page=100');
+        // Request 100 items per page and standard ACF format to get full image objects
+        const res = await fetch('/api-gpx/wp-json/wp/v2/useky?per_page=100&acf_format=standard');
         if (!res.ok) throw new Error("Chyba při načítání dat z WordPress API");
         segmentsData = await res.json();
 
@@ -455,6 +570,9 @@ export default function App() {
         }
 
         if (segment.acf) {
+          // Format date if present
+          segment.acf.formattedDatum = segment.acf.datum ? formatDate(segment.acf.datum) : '';
+
           // Decode HTML entities in segment name if present
           if (segment.acf.nazev_useku) {
             segment.acf.nazev_useku = decodeHTML(segment.acf.nazev_useku);
@@ -501,7 +619,7 @@ export default function App() {
               });
           } else {
             const fotogalerie = [];
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 10; i++) {
               const imgObj = segment.acf[`obrazek_${i}`];
               if (imgObj && typeof imgObj === 'object' && imgObj.url) {
                 const cap = imgObj.popisek || imgObj.caption || imgObj.description || imgObj.title || "";
@@ -632,6 +750,7 @@ export default function App() {
         if (isSingleRouteTrip) {
           trip.sub_segments = [];
           trip.dny = [];
+          trip.formattedDatum = trip.acf?.datum ? formatDate(trip.acf.datum) : '';
           // Coordinates and stats are already loaded from its GPX file!
           return trip;
         }
@@ -647,6 +766,7 @@ export default function App() {
 
         trip.sub_segments = tripDays;
         trip.dny = tripDays; // dual naming just in case
+        trip.formattedDatum = formatTripDates(tripDays);
 
         // Combined coordinates of all its days
         trip.coordinates = tripDays.flatMap(d => d.coordinates || []);
@@ -671,13 +791,24 @@ export default function App() {
         return trip;
       });
 
-      // Sort main trips: completed ones first, keeping their original relative order otherwise
+      // Sort main trips: newest first, oldest last (based on the latest subsegment date)
+      const getTripLatestDate = (trip) => {
+        const days = trip.sub_segments || [];
+        if (days.length === 0) {
+          const dObj = parseDate(trip.acf?.datum);
+          return dObj ? dObj.getTime() : 0;
+        }
+        const timestamps = days
+          .map(d => parseDate(d.acf?.datum))
+          .filter(Boolean)
+          .map(d => d.getTime());
+
+        if (timestamps.length === 0) return 0;
+        return Math.max(...timestamps);
+      };
+
       groupedTrips.sort((a, b) => {
-        const aComp = a.acf?.absolvovano === true;
-        const bComp = b.acf?.absolvovano === true;
-        if (aComp && !bComp) return -1;
-        if (!aComp && bComp) return 1;
-        return 0;
+        return getTripLatestDate(b) - getTripLatestDate(a);
       });
 
       setGpxStatsMap(statsMap);
