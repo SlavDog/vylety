@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Mapa from './components/Mapa';
 import Sidebar from './components/Sidebar';
 import Modal from './components/Modal';
@@ -298,7 +298,7 @@ function formatDate(dateStr) {
 // Helper to construct date range string from subsegments of a trip
 function formatTripDates(tripDays) {
   if (!tripDays || tripDays.length === 0) return '';
-  
+
   const dates = tripDays
     .map(d => d.acf?.datum)
     .filter(d => typeof d === 'string' && d.trim() !== '')
@@ -308,11 +308,11 @@ function formatTripDates(tripDays) {
 
   const parsedDates = [];
   const uniqueStrDates = new Set();
-  
+
   dates.forEach(d => {
     if (uniqueStrDates.has(d)) return;
     uniqueStrDates.add(d);
-    
+
     const dateObj = parseDate(d);
     if (dateObj) {
       parsedDates.push({
@@ -336,7 +336,7 @@ function formatTripDates(tripDays) {
       const prevDate = parsedDates[idx - 1].date;
       const diffTime = pDate.date.getTime() - prevDate.getTime();
       const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-      
+
       if (diffTime > oneWeekInMs) {
         groups.push(currentGroup);
         currentGroup = [pDate];
@@ -355,11 +355,11 @@ function formatTripDates(tripDays) {
     } else {
       const first = group[0].date;
       const last = group[group.length - 1].date;
-      
+
       const dayA = first.getDate();
       const monthA = first.getMonth() + 1;
       const yearA = first.getFullYear();
-      
+
       const dayB = last.getDate();
       const monthB = last.getMonth() + 1;
       const yearB = last.getFullYear();
@@ -397,6 +397,53 @@ export default function App() {
       return true;
     }
   });
+
+  const initialParamsApplied = useRef(false);
+
+  // Načtení aktivního výletu a dne z URL při startu aplikace po dokončení stahování dat
+  useEffect(() => {
+    if (!loading && useky.length > 0 && !initialParamsApplied.current) {
+      initialParamsApplied.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const tripParam = params.get('trip');
+      const dayParam = params.get('day');
+
+      if (tripParam) {
+        const tId = Number(tripParam);
+        const tripExists = useky.some(u => u.id === tId);
+        if (tripExists) {
+          setActiveTripId(tId);
+          if (dayParam) {
+            const dId = Number(dayParam);
+            const trip = useky.find(u => u.id === tId);
+            const dayExists = trip?.sub_segments?.some(d => d.id === dId);
+            if (dayExists) {
+              setActiveDayId(dId);
+              setIsStoryModalOpen(true);
+            }
+          }
+        }
+      }
+    }
+  }, [loading, useky]);
+
+  // Synchronizace aktivního výletu a dne do parametrů URL
+  useEffect(() => {
+    if (loading) return;
+    const url = new URL(window.location.href);
+    if (activeTripId !== null) {
+      url.searchParams.set('trip', activeTripId);
+      if (activeDayId !== null) {
+        url.searchParams.set('day', activeDayId);
+      } else {
+        url.searchParams.delete('day');
+      }
+    } else {
+      url.searchParams.delete('trip');
+      url.searchParams.delete('day');
+    }
+    window.history.replaceState({}, '', url.pathname + url.search);
+  }, [activeTripId, activeDayId, loading]);
 
   const handleCloseWelcome = () => {
     setIsWelcomeOpen(false);
@@ -943,12 +990,12 @@ export default function App() {
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           {/* Glassmorphic backdrop */}
           <div
-            className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity duration-200"
+            className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs animate-fade-in-backdrop"
             onClick={handleCloseWelcome}
           />
 
           {/* Welcome Dialog Box */}
-          <div className="relative w-full max-w-lg p-8 bg-[#f5eedc] border border-stone-300 rounded-3xl shadow-2xl z-10 flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300 text-slate-800">
+          <div className="relative w-full max-w-lg p-8 bg-[#f5eedc] border border-stone-300 rounded-3xl shadow-2xl z-10 flex flex-col gap-6 animate-zoom-in-dialog text-slate-800">
             <button
               onClick={handleCloseWelcome}
               className="absolute top-5 right-5 p-2 rounded-full hover:bg-stone-200/50 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"

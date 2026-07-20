@@ -1,9 +1,65 @@
 import { useEffect, useState } from 'react';
-import { X, MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Share2 } from 'lucide-react';
 
 export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl, onViewPhoto }) {
   const [animate, setAnimate] = useState(false);
   const [shouldRender, setShouldRender] = useState(isOpen);
+  const [copied, setCopied] = useState(false);
+
+  const handleShareDay = () => {
+    if (!usek) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('trip', usek.parent);
+    url.searchParams.set('day', usek.id);
+    const shareUrl = url.toString();
+
+    if (navigator.share) {
+      navigator.share({
+        title: usek.title?.rendered || 'Stezka Českem',
+        text: `Koukni na zápis z cesty: ${usek.title?.rendered}`,
+        url: shareUrl
+      }).catch(err => console.log(err));
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
+
+  const [viewsCount, setViewsCount] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && usek?.id) {
+      setViewsCount(null); // Reset when loading a new segment
+
+      const fetchViews = async () => {
+        try {
+          const res = await fetch(`https://api.counterapi.dev/v1/stezkaceskem-vylety/day_${usek.id}/up`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.value === 'number') {
+              setViewsCount(data.value);
+            }
+          }
+        } catch (err) {
+          console.warn("Failed to update/fetch views count:", err);
+          // Fallback to localStorage
+          try {
+            const localKey = `stezka_views_day_${usek.id}`;
+            const current = Number(localStorage.getItem(localKey)) || 0;
+            const updated = current + 1;
+            localStorage.setItem(localKey, updated.toString());
+            setViewsCount(updated);
+          } catch {
+            // ignore
+          }
+        }
+      };
+
+      fetchViews();
+    }
+  }, [isOpen, usek?.id]);
 
   useEffect(() => {
     if (isOpen) {
@@ -197,6 +253,13 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
                 <p className="text-slate-500 italic text-base">Tento úsek nemá zapsaný žádný příběh.</p>
               )}
 
+              {viewsCount !== null && (
+                <div className="text-xs text-slate-400/80 pt-6 flex items-center gap-1.5 border-t border-stone-300 mt-8 select-none">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  Tento příspěvek byl přečten <strong>{viewsCount}x</strong>.
+                </div>
+              )}
+
               {/* Polaroid photogallery at the end of the text for mobile */}
               {fotogalerie.length > 0 && (
                 <div className="space-y-4 pt-8 border-t border-stone-300 block md:hidden">
@@ -239,7 +302,20 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
         </div>
 
         {/* Modal Footer with Close Action */}
-        <div className="px-6 py-4 bg-[#f5eedc]/60 border-t border-stone-300 flex justify-end gap-3 shrink-0">
+        <div className="px-6 py-4 bg-[#f5eedc]/60 border-t border-stone-300 flex justify-between items-center shrink-0">
+          <button
+            onClick={handleShareDay}
+            className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-white font-bold text-sm transition-all duration-300 ease-out cursor-pointer shadow-sm border min-w-[130px] ${copied
+                ? 'bg-emerald-700 border-emerald-800 scale-102 shadow-emerald-700/10'
+                : 'bg-teal-700 hover:bg-teal-850 border-teal-850'
+              }`}
+          >
+            <Share2 className={`w-4 h-4 transition-transform duration-300 ${copied ? 'rotate-12 scale-110' : ''}`} />
+            <span className="transition-all duration-300 ease-out">
+              {copied ? 'Zkopírováno!' : 'Sdílet den'}
+            </span>
+          </button>
+
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-[#faf6ec] font-semibold text-sm transition-colors duration-200 cursor-pointer shadow-sm border border-slate-900"

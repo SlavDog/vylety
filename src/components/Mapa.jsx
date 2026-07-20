@@ -269,12 +269,12 @@ export default function Mapa({
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           {/* Glassmorphic backdrop */}
           <div
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity duration-200"
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs animate-fade-in-backdrop"
             onClick={() => setIsInfoOpen(false)}
           />
 
           {/* Info Dialog Box */}
-          <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+          <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-zoom-in-dialog text-slate-800">
             <button
               onClick={() => setIsInfoOpen(false)}
               className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-stone-200/50 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
@@ -316,12 +316,12 @@ export default function Mapa({
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           {/* Glassmorphic backdrop */}
           <div
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity duration-200"
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs animate-fade-in-backdrop"
             onClick={() => setIsBookOpen(false)}
           />
 
           {/* Book Dialog Box */}
-          <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+          <div className="relative w-full max-w-md p-6 bg-[#f5eedc] border border-stone-200 rounded-2xl shadow-2xl z-10 flex flex-col gap-4 animate-zoom-in-dialog text-slate-800">
             <button
               onClick={() => setIsBookOpen(false)}
               className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-stone-200/50 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"

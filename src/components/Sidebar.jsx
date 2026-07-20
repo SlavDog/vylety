@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Compass, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 
 export default function Sidebar({
   useky,
@@ -22,6 +22,29 @@ export default function Sidebar({
   const currentDepth = activeTrip ? 1 : 0;
   const [prevDepth, setPrevDepth] = useState(currentDepth);
   const [animationClass, setAnimationClass] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleShareTrip = (e) => {
+    e.stopPropagation();
+    if (!activeTrip) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('trip', activeTrip.id);
+    url.searchParams.delete('day');
+    const shareUrl = url.toString();
+
+    if (navigator.share) {
+      navigator.share({
+        title: activeTrip.title?.rendered || 'Stezka Českem',
+        text: `Koukni na výlet: ${activeTrip.title?.rendered}`,
+        url: shareUrl
+      }).catch(err => console.log(err));
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
 
   if (currentDepth !== prevDepth) {
     if (currentDepth > prevDepth) {
@@ -133,13 +156,27 @@ export default function Sidebar({
         <div key={`trip-overview-${activeTripId}`} className={`flex flex-col h-full ${animationClass}`}>
 
           {/* Back Navigation Bar */}
-          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center">
+          <div className="p-4 border-b border-stone-300 bg-[#f5eedc]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between">
             <button
               onClick={() => setActiveTripId(null)}
               className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               Zpět na přehled
+            </button>
+
+            <button
+              onClick={handleShareTrip}
+              className={`flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ease-out cursor-pointer min-w-[110px] ${copied
+                ? 'text-emerald-700 font-extrabold scale-105'
+                : 'text-teal-700 hover:text-teal-900'
+                }`}
+              title="Sdílet odkaz na tento výlet"
+            >
+              <Share2 className={`w-4.5 h-4.5 transition-transform duration-300 ${copied ? 'rotate-12 scale-110' : ''}`} />
+              <span className="transition-all duration-300 ease-out">
+                {copied ? 'Zkopírováno!' : 'Sdílet'}
+              </span>
             </button>
           </div>
 
