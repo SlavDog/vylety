@@ -1,7 +1,27 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Info, X, BookOpen, HelpCircle } from 'lucide-react';
+import { Info, X, BookOpen, HelpCircle, Layers, Check } from 'lucide-react';
+
+// Mapové podklady s podporou OpenStreetMap s vyznačením hor a obcí
+const TILE_LAYERS = {
+  osm: {
+    id: 'osm',
+    name: 'OpenStreetMap',
+    desc: 'Klasická OpenStreetMap s vyznačením hor, městeček a tras',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  },
+  voyager: {
+    id: 'voyager',
+    name: 'Světlá cestovatelská',
+    desc: 'Čistá světlá podkladová mapa',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19
+  }
+};
 
 
 // Helper component to center and zoom map to segment coordinates
@@ -18,19 +38,15 @@ function MapController({ activeTrack, activeTripId, activeDayId, isMobileExpande
 
       if (isMobile) {
         if (activeDayId) {
-          // Day detail sidebar height is 390px
           paddingBottom = 410;
           paddingTop = 40;
         } else if (activeTripId) {
-          // Trip day list sidebar height is 60vh
           paddingBottom = Math.round(window.innerHeight * 0.60) + 20;
           paddingTop = 40;
         } else if (isMobileExpanded) {
-          // General overview sidebar height is 60vh when expanded by default
           paddingBottom = Math.round(window.innerHeight * 0.60) + 20;
           paddingTop = 40;
         } else {
-          // General overview collapsed sidebar height is 74px (or hidden h-0)
           paddingBottom = 40;
           paddingTop = 40;
         }
@@ -64,6 +80,8 @@ export default function Mapa({
 }) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isBookOpen, setIsBookOpen] = useState(false);
+  const [isLayersMenuOpen, setIsLayersMenuOpen] = useState(false);
+  const [activeTileKey, setActiveTileKey] = useState('osm'); // Výchozí: OpenStreetMap s vyznačením hor a obcí
 
   // Center of Czech Republic
   const centerOfCR = [49.8175, 15.4730];
@@ -78,6 +96,8 @@ export default function Mapa({
   const activeDay = activeTrip?.sub_segments?.find(d => d.id === activeDayId);
   const activeTrack = activeDay || activeTrip || allTracks;
 
+  const activeTileLayer = TILE_LAYERS[activeTileKey] || TILE_LAYERS.osm;
+
   return (
     <div className="w-full h-full relative">
 
@@ -85,18 +105,20 @@ export default function Mapa({
       <MapContainer
         center={centerOfCR}
         zoom={defaultZoom}
-        zoomControl={false} // Disable standard top-left controls to place custom controls later
+        zoomControl={false}
         className="w-full h-full"
       >
-        {/* Premium Light Travel Map Tile Layer (CartoDB Voyager) */}
+        {/* Dynamic Tile Layer (Turistická / OpenTopoMap s názvy hor v podkladu / CyclOSM / Voyager) */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          key={activeTileLayer.id}
+          url={activeTileLayer.url}
+          attribution={activeTileLayer.attribution}
+          maxZoom={activeTileLayer.maxZoom}
         />
 
         {/* Custom Zoom Controls placed bottom-right for clean mobile UI */}
         <div className="leaflet-bottom leaflet-right z-[1000] p-4 hidden sm:block">
-          <div className="leaflet-bar border border-slate-200/80 rounded-lg overflow-hidden">
+          <div className="leaflet-bar border border-slate-200/80 rounded-lg overflow-hidden shadow-md">
             <a
               href="#"
               onClick={(e) => { e.preventDefault(); L.Map.prototype.zoomIn.call(e.currentTarget._map || L.map); }}
@@ -128,47 +150,47 @@ export default function Mapa({
             const isTripActive = trip.id === activeTripId;
             const isDayActive = isSingleRouteTrip ? false : (isTripActive && dayOrTrip.id === activeDayId);
 
-            // Styling parameters
+            // Styling parameters - High contrast colors for topographic map visibility
             let color = '';
-            let weight = 4.5;
+            let weight = 5;
             let opacity = 1.0;
-            let dashArray = isDayCompleted ? undefined : '5, 8';
+            let dashArray = isDayCompleted ? undefined : '6, 9';
 
             const isTripHovered = hoveredTripId === trip.id;
             const isDayHovered = isSingleRouteTrip ? false : (hoveredDayId === dayOrTrip.id);
 
             if (activeTripId === null) {
-              // 1. General Overview: render trips as single units with solid opacity
+              // 1. General Overview
               if (isDayCompleted) {
                 color = isTripHovered ? '#22c55e' : '#15803d'; // Vibrant green on hover, rich forest green normally
               } else {
-                color = isTripHovered ? '#d97706' : '#78716c'; // Warm amber-orange on hover, slate-stone normally
+                color = isTripHovered ? '#f97316' : '#ea580c'; // Vibrant bright orange on hover, solid amber orange normally
               }
-              weight = isTripHovered ? 6 : 4.5;
+              weight = isTripHovered ? 7 : 5;
               opacity = 1.0;
             } else if (isTripActive) {
-              // 2. Active Trip: draw days with alternating colors and highlight hover/active
+              // 2. Active Trip
               if (isDayCompleted) {
-                color = idx % 2 === 0 ? '#14532d' : '#22c55e'; // Deep forest moss (#14532d) vs bright grass green (#22c55e)
+                color = idx % 2 === 0 ? '#14532d' : '#16a34a'; // Alternating deep forest (#14532d) & rich emerald green (#16a34a)
               } else {
-                color = idx % 2 === 0 ? '#374151' : '#9ca3af'; // Dark charcoal (#374151) vs light silver gray (#9ca3af)
+                color = idx % 2 === 0 ? '#ea580c' : '#f97316'; // Alternating vivid amber & bright orange
               }
 
               if (isDayActive) {
-                color = isDayCompleted ? '#0d9488' : '#1e293b'; // Teal accent for active completed day, Dark Slate for uncompleted
-                weight = 8.5;
+                color = isDayCompleted ? '#0d9488' : '#c2410c'; // Teal accent for active completed day, Deep Coral for uncompleted
+                weight = 9;
                 dashArray = undefined; // Solid line for active highlight
               } else if (isDayHovered) {
-                weight = 7.5; // Make line thicker, keeping its original color
+                weight = 8;
               } else {
-                weight = 4.5; // Default thickness
+                weight = 5;
               }
               opacity = 1.0;
             } else {
               // 3. Faded inactive trips
-              color = isDayCompleted ? '#16a34a' : '#78716c';
-              weight = 2.5;
-              opacity = 0.2;
+              color = isDayCompleted ? '#16a34a' : '#d97706';
+              weight = 3;
+              opacity = 0.3;
             }
 
             return (
@@ -183,11 +205,13 @@ export default function Mapa({
                   color: color,
                   weight: weight,
                   opacity: opacity,
-                  dashArray: dashArray
+                  dashArray: dashArray,
+                  lineCap: 'round',
+                  lineJoin: 'round'
                 }}
                 eventHandlers={{
                   click: () => {
-                    if (isSingleRouteTrip) return; // Do not allow clicking/selecting uncompleted parent trips
+                    if (isSingleRouteTrip) return;
 
                     if (activeTripId === null) {
                       setActiveTripId(trip.id);
@@ -234,7 +258,7 @@ export default function Mapa({
       </MapContainer>
 
       {/* Floating Controls Top Left */}
-      <div className="absolute top-4 left-4 z-[999] flex gap-2 items-center">
+      <div className="absolute top-4 left-4 z-[999] flex gap-2 items-center flex-wrap max-w-[calc(100%-2rem)]">
         {/* Floating Project Info Button */}
         <button
           onClick={() => setIsInfoOpen(true)}
@@ -253,6 +277,60 @@ export default function Mapa({
           <HelpCircle className="w-5 h-5" />
         </button>
 
+        {/* Layer Switcher Button */}
+        <div className="relative">
+          <button
+            onClick={() => setIsLayersMenuOpen(!isLayersMenuOpen)}
+            className="px-4 py-2.5 rounded-full bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center gap-1.5 border border-teal-900"
+            title="Změnit mapový podklad / OpenStreetMap"
+          >
+            <Layers className="w-4 h-4" />
+            <span>Výběr mapy</span>
+          </button>
+
+          {/* Layer Selection Dropdown Menu */}
+          {isLayersMenuOpen && (
+            <div className="absolute left-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-2 z-[10000] animate-zoom-in-dialog">
+              <div className="px-3 py-2 border-b border-stone-100 flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Mapový podklad</span>
+                <button
+                  onClick={() => setIsLayersMenuOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-1 py-1">
+                {Object.values(TILE_LAYERS).map(layer => (
+                  <button
+                    key={layer.id}
+                    onClick={() => {
+                      setActiveTileKey(layer.id);
+                      setIsLayersMenuOpen(false);
+                    }}
+                    className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 cursor-pointer ${
+                      activeTileKey === layer.id
+                        ? 'bg-teal-50 text-teal-900 font-semibold border border-teal-200'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${
+                      activeTileKey === layer.id ? 'bg-teal-700 border-teal-700 text-white' : 'border-slate-300'
+                    }`}>
+                      {activeTileKey === layer.id && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">{layer.name}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">{layer.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Floating Book Promo Button */}
         <button
           onClick={() => setIsBookOpen(true)}
@@ -260,7 +338,7 @@ export default function Mapa({
           title="Kupte si mou knihu"
         >
           <BookOpen className="w-4 h-4" />
-          <span>Kupte si mou knihu</span>
+          <span className="hidden sm:inline">Kupte si mou knihu</span>
         </button>
       </div>
 
@@ -298,6 +376,9 @@ export default function Mapa({
               </p>
               <p>
                 Kliknutím na jednotlivé <strong>úseky trasy na mapě</strong> si můžete zobrazit informace o konkrétní trase a přečíst si zápisky z našich dobrodružství.
+              </p>
+              <p className="text-xs text-teal-800 bg-teal-50/80 p-2.5 rounded-xl border border-teal-100">
+                💡 <strong>Tip:</strong> Pomocí tlačítka <strong>Mapa</strong> v horní liště si můžete přepnout podklad na <em>OpenStreetMap</em> pro zobrazení názvů hor, obcí a cest.
               </p>
             </div>
 
@@ -382,3 +463,4 @@ export default function Mapa({
     </div>
   );
 }
+

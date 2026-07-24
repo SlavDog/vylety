@@ -1,5 +1,25 @@
 import { useEffect, useState } from 'react';
-import { X, MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Share2 } from 'lucide-react';
+import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { X, MapPin, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, Share2, Compass } from 'lucide-react';
+
+// Helper component to invalidate Leaflet size and fit bounds of day track in modal
+function MiniMapController({ coordinates }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+      if (coordinates && coordinates.length > 0) {
+        const bounds = L.latLngBounds(coordinates);
+        map.fitBounds(bounds, { padding: [25, 25], animate: true });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [coordinates, map]);
+
+  return null;
+}
 
 export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl, onViewPhoto }) {
   const [animate, setAnimate] = useState(false);
@@ -198,6 +218,46 @@ export default function Modal({ isOpen, onClose, usek, gpxStats, resolveImageUrl
                   </span>
                 </div>
               </div>
+
+              {/* Mini Map showing GPX segment for this day */}
+              {usek.coordinates && usek.coordinates.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-teal-700" />
+                      Trasa na mapě
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium">OpenStreetMap</span>
+                  </div>
+                  <div className="w-full h-48 sm:h-52 rounded-2xl overflow-hidden border border-stone-300 shadow-sm relative z-0">
+                    <MapContainer
+                      center={usek.coordinates[0] || [49.8, 15.4]}
+                      zoom={11}
+                      zoomControl={true}
+                      scrollWheelZoom={false}
+                      className="w-full h-full"
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        maxZoom={19}
+                      />
+                      <Polyline
+                        positions={usek.coordinates}
+                        pathOptions={{
+                          color: absolvovano ? '#16a34a' : '#ea580c',
+                          weight: 5,
+                          opacity: 0.95,
+                          dashArray: absolvovano ? undefined : '6, 9',
+                          lineCap: 'round',
+                          lineJoin: 'round'
+                        }}
+                      />
+                      <MiniMapController coordinates={usek.coordinates} />
+                    </MapContainer>
+                  </div>
+                </div>
+              )}
 
               {/* Polaroid photogallery on the sidebar for desktop */}
               {fotogalerie.length > 0 && (
